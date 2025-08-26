@@ -12,42 +12,49 @@ export default function FamilyTreeMalayalam() {
     (nodes || []).map((n) =>
       typeof n === "string"
         ? {
-            id: makeId(),
-            name: n,
-            spouses: [],
-            children: [],
-            collapsed: true,
-          }
+          id: makeId(),
+          name: n,
+          spouses: [],
+          children: [],
+          collapsed: true,
+        }
         : {
-            id: n.id || makeId(),
-            name: n.name || "",
-            spouses: n.spouses || [],
-            children: normalizeTree(n.children || []),
-            collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true,
-          }
+          id: n.id || makeId(),
+          name: n.name || "",
+          spouses: n.spouses || [],
+          children: normalizeTree(n.children || []),
+          collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true,
+        }
     );
 
-  const [tree, setTree] = useState(() => ({}));
+  const [tree, setTree] = useState({
+    father: "",
+    mother: "",
+    children: [],
+  });
 
   // Fetch tree from backend once
   useEffect(() => {
     axios
       .get("https://familytree-365c.onrender.com/family-tree")
       .then((res) => {
-        setTree((prev) => ({
-          ...res.data,
-          children: normalizeTree(res.data.children),
-        }));
+        const data = res.data || {};
+        setTree({
+          father: data.father || "",
+          mother: data.mother || "",
+          children: normalizeTree(data.children || []),
+        });
       })
       .catch((err) => console.error("Failed to fetch family tree:", err));
   }, []);
 
+
   // Count members recursively
-const countMembers = (nodes) =>
-  (nodes || []).reduce(
-    (sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children),
-    0
-  );
+  const countMembers = (nodes) =>
+    (nodes || []).reduce(
+      (sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children),
+      0
+    );
 
   // Tree update helpers
   const updateName = (nodes, id, name) =>
@@ -88,18 +95,18 @@ const countMembers = (nodes) =>
     nodes.map((n) =>
       n.id === id
         ? {
-            ...n,
-            children: [
-              ...(n.children || []),
-              {
-                id: makeId(),
-                name: "",
-                spouses: [],
-                children: [],
-                collapsed: false,
-              },
-            ],
-          }
+          ...n,
+          children: [
+            ...(n.children || []),
+            {
+              id: makeId(),
+              name: "",
+              spouses: [],
+              children: [],
+              collapsed: false,
+            },
+          ],
+        }
         : { ...n, children: addChildToNode(n.children, id) }
     );
 
@@ -355,6 +362,7 @@ const countMembers = (nodes) =>
         {(tree.children || []).map((child) => (
           <Node key={child.id} node={child} level={0} />
         ))}
+
       </div>
     </div>
   );
