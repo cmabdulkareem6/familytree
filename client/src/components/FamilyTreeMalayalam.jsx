@@ -343,24 +343,101 @@ export default function FamilyTreeMalayalam() {
   return (
     <div className="ft-root">
       <style>{`
-        :root { --bg: #f8fafc; --card: #ffffff; --accent: #4f46e5; --green: #10b981; --red: #ef4444; --gray:#6b7280; }
-        .ft-root { padding: 20px; font-family: Inter, sans-serif; max-width: 940px; margin: 8px auto; background: var(--bg); min-height: 100vh; }
-        .ft-header { text-align: center; font-weight: 700; font-size: 20px; margin-bottom: 12px; }
-        .ft-controls { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-        .ft-input { padding: 8px 10px; border-radius: 10px; border: 1px solid #e6e7eb; font-size: 14px; }
-        .ft-input.small { width: 85%; }
-        .ft-row { display:flex; gap:8px; align-items:center; }
-        .ft-actions { display:flex; gap:8px; flex-wrap:wrap; }
-        .ft-btn { padding:6px 10px; border-radius: 8px; border: none; cursor: pointer; font-size:13px; flex: none; }
-        .ft-btn-indigo { background: var(--accent); color: white; }
-        .ft-btn-green { background: var(--green); color: white; }
-        .ft-btn-red { background: var(--red); color: white; }
-        .ft-btn-gray { background: var(--gray); color: white; }
-        .ft-node-branch { border-left: 3px solid rgba(99,102,241,0.08); margin-left: 10px; padding-left: 12px; }
-        .ft-node { border-radius: 12px; padding: 10px; margin: 8px 0; }
-        .ft-spouse { margin-left: 18px; margin-top: 8px; }
-        .ft-children { margin-left: 6px; margin-top: 8px; }
-      `}</style>
+  :root { --bg: #f8fafc; --card: #ffffff; --accent: #4f46e5; --green: #10b981; --red: #ef4444; --gray:#6b7280; }
+  .ft-root { 
+    padding: 20px; 
+    font-family: Inter, sans-serif; 
+    max-width: 940px; 
+    margin: 8px auto; 
+    background: var(--bg); 
+    min-height: 100vh; 
+    box-sizing: border-box;
+  }
+  .ft-header { 
+    text-align: center; 
+    font-weight: 700; 
+    font-size: 20px; 
+    margin-bottom: 12px; 
+  }
+  .ft-controls { 
+    display:flex; 
+    gap:12px; 
+    flex-wrap:wrap; 
+    margin-bottom:12px; 
+  }
+  .ft-input { 
+    padding: 8px 10px; 
+    border-radius: 10px; 
+    border: 1px solid #e6e7eb; 
+    font-size: 14px; 
+    box-sizing: border-box;
+  }
+  .ft-input.small { 
+    width: 85%; 
+  }
+  .ft-row { 
+    display:flex; 
+    gap:8px; 
+    align-items:center; 
+    flex-wrap: wrap;
+  }
+  .ft-actions { 
+    display:flex; 
+    gap:8px; 
+    flex-wrap:wrap; 
+  }
+  .ft-btn { 
+    padding:6px 10px; 
+    border-radius: 8px; 
+    border: none; 
+    cursor: pointer; 
+    font-size:13px; 
+    flex: none; 
+  }
+  .ft-btn-indigo { background: var(--accent); color: white; }
+  .ft-btn-green { background: var(--green); color: white; }
+  .ft-btn-red { background: var(--red); color: white; }
+  .ft-btn-gray { background: var(--gray); color: white; }
+
+  /* MAIN FIXES */
+  .ft-node-branch { 
+    border-left: 3px solid rgba(99,102,241,0.08); 
+    margin-left: 0; /* remove cumulative margin-left */
+    padding-left: 12px; 
+    display: flex;
+    flex-direction: column;
+    max-width: 100%; /* prevent overflow */
+    box-sizing: border-box;
+    overflow-wrap: break-word; /* allow long names to wrap */
+  }
+
+  .ft-node { 
+    border-radius: 12px; 
+    padding: 10px; 
+    margin: 8px 0; 
+    word-break: break-word; /* wrap long content */
+  }
+  .ft-spouse { 
+    margin-left: 18px; 
+    margin-top: 8px; 
+  }
+  .ft-children { 
+    margin-left: 6px; 
+    margin-top: 8px; 
+    display: flex; 
+    flex-direction: column; 
+    flex-wrap: wrap; 
+    max-width: 100%;
+  }
+
+  @media screen and (max-width: 768px) {
+    .ft-row { flex-direction: column; align-items: flex-start; }
+    .ft-actions { flex-wrap: wrap; }
+    .ft-input { width: 100%; }
+    .ft-input.small { width: 100%; }
+  }
+`}</style>
+
 
       <div style={{ marginBottom: 16, textAlign: "right" }}>
         <button onClick={handleUpdateBackend} className="ft-btn ft-btn-green">
