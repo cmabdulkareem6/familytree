@@ -116,8 +116,9 @@ const countMembers = (nodes) =>
     );
 
   // Handlers
-  const handleUpdateName = (id, name) =>
-    setTree((prev) => ({ ...prev, children: updateName(prev.children, id, name) }));
+const handleUpdateName = useCallback((id, name) => {
+  setTree((prev) => ({ ...prev, children: updateName(prev.children, id, name) }));
+}, []);
   const handleAddSpouse = (id) =>
     setTree((prev) => ({ ...prev, children: addSpouse(prev.children, id) }));
   const handleUpdateSpouse = (id, idx, name) =>
