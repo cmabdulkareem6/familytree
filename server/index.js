@@ -3,15 +3,12 @@ import mongoose from "mongoose";
 import cors from "cors";
 
 const app = express();
-app.use(cors({ origin: "http://localhost:5173", methods: ["GET", "POST"], allowedHeaders: ["Content-Type"] }));
+app.use(cors({ origin: "https://familytree-steel-mu.vercel.app", methods: ["GET", "POST"], allowedHeaders: ["Content-Type"] }));
 app.use(express.json());
 
 // MongoDB connection
 await mongoose
-  .connect("mongodb://127.0.0.1:27017/familytree", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect("mongodb+srv://familytree:familyuser@cluster0.htdn3zc.mongodb.net/familyTree")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 

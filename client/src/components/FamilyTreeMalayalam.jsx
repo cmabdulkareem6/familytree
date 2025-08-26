@@ -159,18 +159,18 @@ export default function FamilyTreeMalayalam() {
     ]),
   }));
 
-//   // Fetch tree from backend once
-//   useEffect(() => {
-//     axios
-//       .get("http://localhost:3000/family-tree")
-//       .then((res) => {
-//         setTree((prev) => ({
-//           ...res.data,
-//           children: normalizeTree(res.data.children),
-//         }));
-//       })
-//       .catch((err) => console.error("Failed to fetch family tree:", err));
-//   }, []);
+  // Fetch tree from backend once
+  useEffect(() => {
+    axios
+      .get("https://familytree-365c.onrender.com/family-tree")
+      .then((res) => {
+        setTree((prev) => ({
+          ...res.data,
+          children: normalizeTree(res.data.children),
+        }));
+      })
+      .catch((err) => console.error("Failed to fetch family tree:", err));
+  }, []);
 
   // Count members recursively
   const countMembers = (nodes) =>
