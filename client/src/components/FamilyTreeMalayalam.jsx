@@ -150,8 +150,9 @@ const countMembers = (nodes) =>
   };
 
   // Recursive Node component
-  const Node = React.memo(({ node, level }) => {
-  <div className="ft-node-branch">
+  
+  const Node = ({ node, level }) => (
+    <div className="ft-node-branch">
       <div
         className="ft-node"
         style={{ backgroundColor: colors[level % colors.length] }}
@@ -211,7 +212,7 @@ const countMembers = (nodes) =>
         )}
       </div>
     </div>
-});
+  );
 
   return (
     <div className="ft-root">
