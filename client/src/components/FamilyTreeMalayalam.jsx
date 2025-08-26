@@ -12,19 +12,19 @@ export default function FamilyTreeMalayalam() {
     (nodes || []).map((n) =>
       typeof n === "string"
         ? {
-            id: makeId(),
-            name: n,
-            spouses: [],
-            children: [],
-            collapsed: true,
-          }
+          id: makeId(),
+          name: n,
+          spouses: [],
+          children: [],
+          collapsed: true,
+        }
         : {
-            id: n.id || makeId(),
-            name: n.name || "",
-            spouses: n.spouses || [],
-            children: normalizeTree(n.children || []),
-            collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true,
-          }
+          id: n.id || makeId(),
+          name: n.name || "",
+          spouses: n.spouses || [],
+          children: normalizeTree(n.children || []),
+          collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true,
+        }
     );
 
   const [tree, setTree] = useState(() => ({}));
@@ -43,11 +43,11 @@ export default function FamilyTreeMalayalam() {
   }, []);
 
   // Count members recursively
-const countMembers = (nodes) =>
-  (nodes || []).reduce(
-    (sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children),
-    0
-  );
+  const countMembers = (nodes) =>
+    (nodes || []).reduce(
+      (sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children),
+      0
+    );
 
   // Tree update helpers
   const updateName = (nodes, id, name) =>
@@ -88,18 +88,18 @@ const countMembers = (nodes) =>
     nodes.map((n) =>
       n.id === id
         ? {
-            ...n,
-            children: [
-              ...(n.children || []),
-              {
-                id: makeId(),
-                name: "",
-                spouses: [],
-                children: [],
-                collapsed: false,
-              },
-            ],
-          }
+          ...n,
+          children: [
+            ...(n.children || []),
+            {
+              id: makeId(),
+              name: "",
+              spouses: [],
+              children: [],
+              collapsed: false,
+            },
+          ],
+        }
         : { ...n, children: addChildToNode(n.children, id) }
     );
 
@@ -116,23 +116,61 @@ const countMembers = (nodes) =>
     );
 
   // Handlers
+  // Name update
   const handleUpdateName = (id, name) =>
-    setTree((prev) => ({ ...prev, children: updateName(prev.children, id, name) }));
+    setTree((prev) => ({
+      ...prev,
+      children: updateName(prev.children, id, name),
+    }));
+
+  // Add spouse
   const handleAddSpouse = (id) =>
-    setTree((prev) => ({ ...prev, children: addSpouse(prev.children, id) }));
+    setTree((prev) => ({
+      ...prev,
+      children: addSpouse(prev.children, id),
+    }));
+
+  // Update spouse name
   const handleUpdateSpouse = (id, idx, name) =>
     setTree((prev) => ({
       ...prev,
       children: updateSpouse(prev.children, id, idx, name),
     }));
+
+  // Delete spouse
   const handleDeleteSpouse = (id, idx) =>
-    setTree((prev) => ({ ...prev, children: deleteSpouse(prev.children, id, idx) }));
+    setTree((prev) => ({
+      ...prev,
+      children: deleteSpouse(prev.children, id, idx),
+    }));
+
+  // Add child
   const handleAddChild = (id) =>
-    setTree((prev) => ({ ...prev, children: addChildToNode(prev.children, id) }));
+    setTree((prev) => ({
+      ...prev,
+      children: addChildToNode(prev.children, id),
+    }));
+
+  // Delete node
   const handleDelete = (id) =>
-    setTree((prev) => ({ ...prev, children: deleteNode(prev.children, id) }));
+    setTree((prev) => ({
+      ...prev,
+      children: deleteNode(prev.children, id),
+    }));
+
+  // Toggle collapse
   const handleToggle = (id) =>
-    setTree((prev) => ({ ...prev, children: toggleCollapse(prev.children, id) }));
+    setTree((prev) => ({
+      ...prev,
+      children: toggleCollapse(prev.children, id),
+    }));
+
+  // Father and Mother inputs
+  const handleFatherChange = (value) =>
+    setTree((prev) => ({ ...prev, father: value }));
+
+  const handleMotherChange = (value) =>
+    setTree((prev) => ({ ...prev, mother: value }));
 
   const handleUpdateBackend = async () => {
     try {
@@ -150,7 +188,7 @@ const countMembers = (nodes) =>
   };
 
   // Recursive Node component
-  
+
   const Node = ({ node, level }) => (
     <div className="ft-node-branch">
       <div
@@ -330,13 +368,11 @@ const countMembers = (nodes) =>
           </label>
           <div className="ft-row">
             <input
-  className="ft-input"
-  value={tree.father}
-  onChange={(e) =>
-    setTree((prev) => ({ ...prev, father: e.target.value }))
-  }
-  placeholder="പിതാവ്"
-/>
+              className="ft-input"
+              value={tree.father}
+              onChange={(e) => handleFatherChange(e.target.value)}
+              placeholder="പിതാവ്"
+            />
           </div>
         </div>
         <div style={{ flex: 1 }}>
@@ -345,13 +381,11 @@ const countMembers = (nodes) =>
           </label>
           <div className="ft-row">
             <input
-  className="ft-input"
-  value={tree.mother}
-  onChange={(e) =>
-    setTree((prev) => ({ ...prev, mother: e.target.value }))
-  }
-  placeholder="ഭാര്യ"
-/>
+              className="ft-input"
+              value={tree.mother}
+              onChange={(e) => handleMotherChange(e.target.value)}
+              placeholder="ഭാര്യ"
+            />
           </div>
         </div>
       </div>
