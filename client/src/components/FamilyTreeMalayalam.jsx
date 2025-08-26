@@ -50,71 +50,95 @@ export default function FamilyTreeMalayalam() {
     );
 
   // Tree update helpers
-  const updateName = (nodes, id, name) =>
-    nodes.map((n) =>
-      n.id === id
-        ? { ...n, name }
-        : { ...n, children: updateName(n.children, id, name) }
-    );
+const updateName = (nodes, id, name) =>
+  nodes.map((n) => {
+    if (n.id === id) return { ...n, name };
+    if (!n.children?.length) return n; // no children, return same object
+    const updatedChildren = updateName(n.children, id, name);
+    if (updatedChildren === n.children) return n; // unchanged
+    return { ...n, children: updatedChildren };
+  });
 
-  const addSpouse = (nodes, id) =>
-    nodes.map((n) =>
-      n.id === id
-        ? { ...n, spouses: [...(n.spouses || []), ""] }
-        : { ...n, children: addSpouse(n.children, id) }
-    );
+const addSpouse = (nodes, id) =>
+  nodes.map((n) => {
+    if (n.id === id) return { ...n, spouses: [...(n.spouses || []), ""] };
+    if (!n.children?.length) return n;
+    const updatedChildren = addSpouse(n.children, id);
+    if (updatedChildren === n.children) return n;
+    return { ...n, children: updatedChildren };
+  });
 
-  const updateSpouse = (nodes, id, idx, name) =>
-    nodes.map((n) => {
-      if (n.id === id) {
-        const copy = [...(n.spouses || [])];
-        copy[idx] = name;
-        return { ...n, spouses: copy };
-      }
-      return { ...n, children: updateSpouse(n.children, id, idx, name) };
-    });
+const updateSpouse = (nodes, id, idx, name) =>
+  nodes.map((n) => {
+    if (n.id === id) {
+      const copy = [...(n.spouses || [])];
+      copy[idx] = name;
+      return { ...n, spouses: copy };
+    }
+    if (!n.children?.length) return n;
+    const updatedChildren = updateSpouse(n.children, id, idx, name);
+    if (updatedChildren === n.children) return n;
+    return { ...n, children: updatedChildren };
+  });
 
-  const deleteSpouse = (nodes, id, idx) =>
-    nodes.map((n) => {
-      if (n.id === id) {
-        const copy = [...(n.spouses || [])];
-        copy.splice(idx, 1);
-        return { ...n, spouses: copy };
-      }
-      return { ...n, children: deleteSpouse(n.children, id, idx) };
-    });
 
-  const addChildToNode = (nodes, id) =>
-    nodes.map((n) =>
-      n.id === id
-        ? {
-          ...n,
-          children: [
-            ...(n.children || []),
-            {
-              id: makeId(),
-              name: "",
-              spouses: [],
-              children: [],
-              collapsed: false,
-            },
-          ],
-        }
-        : { ...n, children: addChildToNode(n.children, id) }
-    );
+const deleteSpouse = (nodes, id, idx) =>
+  nodes.map((n) => {
+    if (n.id === id) {
+      const copy = [...(n.spouses || [])];
+      copy.splice(idx, 1);
+      return { ...n, spouses: copy };
+    }
+    if (!n.children?.length) return n;
+    const updatedChildren = deleteSpouse(n.children, id, idx);
+    if (updatedChildren === n.children) return n;
+    return { ...n, children: updatedChildren };
+  });
 
-  const deleteNode = (nodes, id) =>
-    nodes
-      .filter((n) => n.id !== id)
-      .map((n) => ({ ...n, children: deleteNode(n.children, id) }));
+const addChildToNode = (nodes, id) =>
+  nodes.map((n) => {
+    if (n.id === id)
+      return {
+        ...n,
+        children: [
+          ...(n.children || []),
+          { id: makeId(), name: "", spouses: [], children: [], collapsed: false },
+        ],
+      };
+    if (!n.children?.length) return n;
+    const updatedChildren = addChildToNode(n.children, id);
+    if (updatedChildren === n.children) return n;
+    return { ...n, children: updatedChildren };
+  });
 
-  const toggleCollapse = (nodes, id) =>
-    nodes.map((n) =>
-      n.id === id
-        ? { ...n, collapsed: !n.collapsed }
-        : { ...n, children: toggleCollapse(n.children, id) }
-    );
+const deleteNode = (nodes, id) => {
+  let changed = false;
+  const filtered = nodes.filter((n) => {
+    if (n.id === id) {
+      changed = true;
+      return false;
+    }
+    return true;
+  });
+  const mapped = filtered.map((n) => {
+    if (!n.children?.length) return n;
+    const updatedChildren = deleteNode(n.children, id);
+    if (updatedChildren === n.children) return n;
+    changed = true;
+    return { ...n, children: updatedChildren };
+  });
+  return changed ? mapped : nodes;
+};
 
+
+const toggleCollapse = (nodes, id) =>
+  nodes.map((n) => {
+    if (n.id === id) return { ...n, collapsed: !n.collapsed };
+    if (!n.children?.length) return n;
+    const updatedChildren = toggleCollapse(n.children, id);
+    if (updatedChildren === n.children) return n;
+    return { ...n, children: updatedChildren };
+  });
   // Handlers
   // Name update
   const handleUpdateName = (id, name) =>
