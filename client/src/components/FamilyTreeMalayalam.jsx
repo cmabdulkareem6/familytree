@@ -7,139 +7,105 @@ export default function FamilyTreeMalayalam() {
 
   const colors = ["#fef9c3", "#dbeafe", "#dcfce7", "#fde2e2", "#f3e8ff"];
 
-  // Normalize tree and generate IDs only if missing
+  // Recursive node update helper
+  const updateNode = (node, id, updater) => {
+    if (node.id === id) return updater(node);
+    return { ...node, children: node.children.map(c => updateNode(c, id, updater)) };
+  };
+
+  // Normalize tree from backend
   const normalizeTree = (nodes) =>
     (nodes || []).map((n) =>
       typeof n === "string"
-        ? {
-          id: makeId(),
-          name: n,
-          spouses: [],
-          children: [],
-          collapsed: true,
-        }
+        ? { id: makeId(), name: n, spouses: [], children: [], collapsed: true }
         : {
-          id: n.id || makeId(),
-          name: n.name || "",
-          spouses: n.spouses || [],
-          children: normalizeTree(n.children || []),
-          collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true,
-        }
+            id: n.id || makeId(),
+            name: n.name || "",
+            spouses: n.spouses || [],
+            children: normalizeTree(n.children || []),
+            collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true,
+          }
     );
 
   const [tree, setTree] = useState({
+    id: makeId(),
+    name: "",
+    spouses: [],
+    children: [],
+    collapsed: false,
     father: "",
     mother: "",
-    children: [],
   });
 
-  // Fetch tree from backend once
+  // Fetch tree from backend
   useEffect(() => {
     axios
       .get("https://familytree-365c.onrender.com/family-tree")
       .then((res) => {
         const data = res.data || {};
         setTree({
+          id: makeId(),
+          name: "",
+          spouses: [],
+          children: normalizeTree(data.children || []),
+          collapsed: false,
           father: data.father || "",
           mother: data.mother || "",
-          children: normalizeTree(data.children || []),
         });
       })
       .catch((err) => console.error("Failed to fetch family tree:", err));
   }, []);
 
-
   // Count members recursively
-  const countMembers = (nodes) =>
-    (nodes || []).reduce(
-      (sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children),
-      0
-    );
-
-  // Tree update helpers
-  const updateName = (nodes, id, name) =>
-    nodes.map((n) =>
-      n.id === id
-        ? { ...n, name }
-        : { ...n, children: updateName(n.children, id, name) }
-    );
-
-  const addSpouse = (nodes, id) =>
-    nodes.map((n) =>
-      n.id === id
-        ? { ...n, spouses: [...(n.spouses || []), ""] }
-        : { ...n, children: addSpouse(n.children, id) }
-    );
-
-  const updateSpouse = (nodes, id, idx, name) =>
-    nodes.map((n) => {
-      if (n.id === id) {
-        const copy = [...(n.spouses || [])];
-        copy[idx] = name;
-        return { ...n, spouses: copy };
-      }
-      return { ...n, children: updateSpouse(n.children, id, idx, name) };
-    });
-
-  const deleteSpouse = (nodes, id, idx) =>
-    nodes.map((n) => {
-      if (n.id === id) {
-        const copy = [...(n.spouses || [])];
-        copy.splice(idx, 1);
-        return { ...n, spouses: copy };
-      }
-      return { ...n, children: deleteSpouse(n.children, id, idx) };
-    });
-
-  const addChildToNode = (nodes, id) =>
-    nodes.map((n) =>
-      n.id === id
-        ? {
-          ...n,
-          children: [
-            ...(n.children || []),
-            {
-              id: makeId(),
-              name: "",
-              spouses: [],
-              children: [],
-              collapsed: false,
-            },
-          ],
-        }
-        : { ...n, children: addChildToNode(n.children, id) }
-    );
-
-  const deleteNode = (nodes, id) =>
-    nodes
-      .filter((n) => n.id !== id)
-      .map((n) => ({ ...n, children: deleteNode(n.children, id) }));
-
-  const toggleCollapse = (nodes, id) =>
-    nodes.map((n) =>
-      n.id === id
-        ? { ...n, collapsed: !n.collapsed }
-        : { ...n, children: toggleCollapse(n.children, id) }
-    );
+  const countMembers = (node) =>
+    1 + (node.spouses?.length || 0) + node.children.reduce((sum, c) => sum + countMembers(c), 0);
 
   // Handlers
   const handleUpdateName = (id, name) =>
-    setTree((prev) => ({ ...prev, children: updateName(prev.children, id, name) }));
+    setTree((prev) => updateNode(prev, id, (n) => ({ ...n, name })));
+
   const handleAddSpouse = (id) =>
-    setTree((prev) => ({ ...prev, children: addSpouse(prev.children, id) }));
+    setTree((prev) => updateNode(prev, id, (n) => ({ ...n, spouses: [...n.spouses, ""] })));
+
   const handleUpdateSpouse = (id, idx, name) =>
-    setTree((prev) => ({
-      ...prev,
-      children: updateSpouse(prev.children, id, idx, name),
-    }));
+    setTree((prev) =>
+      updateNode(prev, id, (n) => ({
+        ...n,
+        spouses: n.spouses.map((s, i) => (i === idx ? name : s)),
+      }))
+    );
+
   const handleDeleteSpouse = (id, idx) =>
-    setTree((prev) => ({ ...prev, children: deleteSpouse(prev.children, id, idx) }));
+    setTree((prev) =>
+      updateNode(prev, id, (n) => ({
+        ...n,
+        spouses: n.spouses.filter((_, i) => i !== idx),
+      }))
+    );
+
   const handleAddChild = (id) =>
-    setTree((prev) => ({ ...prev, children: addChildToNode(prev.children, id) }));
+    setTree((prev) =>
+      updateNode(prev, id, (n) => ({
+        ...n,
+        children: [
+          ...n.children,
+          { id: makeId(), name: "", spouses: [], children: [], collapsed: false },
+        ],
+      }))
+    );
+
   const handleDelete = (id) =>
-    setTree((prev) => ({ ...prev, children: deleteNode(prev.children, id) }));
+    setTree((prev) => {
+      if (prev.id === id) return { ...prev, children: [] }; // prevent deleting root
+      const filterNode = (node) => ({
+        ...node,
+        children: node.children.filter((c) => c.id !== id).map(filterNode),
+      });
+      return filterNode(prev);
+    });
+
   const handleToggle = (id) =>
-    setTree((prev) => ({ ...prev, children: toggleCollapse(prev.children, id) }));
+    setTree((prev) => updateNode(prev, id, (n) => ({ ...n, collapsed: !n.collapsed })));
 
   const handleUpdateBackend = async () => {
     try {
@@ -156,61 +122,43 @@ export default function FamilyTreeMalayalam() {
     }
   };
 
-  // Recursive Node component
+  // Recursive Node Component
   const Node = ({ node, level }) => (
-    <div className="ft-node-branch">
-      <div
-        className="ft-node"
-        style={{ backgroundColor: colors[level % colors.length] }}
-      >
-        <div className="ft-row">
-          <button className="ft-btn ft-btn-gray" onClick={() => handleToggle(node.id)}>
+    <div style={{ borderLeft: "3px solid rgba(99,102,241,0.08)", marginLeft: 0, paddingLeft: 12 }}>
+      <div style={{ background: colors[level % colors.length], borderRadius: 12, padding: 10, margin: "8px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <button onClick={() => handleToggle(node.id)}>
             {node.collapsed ? "+" : "-"}
           </button>
           <input
-            aria-label="പേര്"
-            className="ft-input"
             value={node.name}
             placeholder="പേര്"
             onChange={(e) => handleUpdateName(node.id, e.target.value)}
           />
-          <div className="ft-actions">
-            <button className="ft-btn ft-btn-indigo" onClick={() => handleAddSpouse(node.id)}>
-              +ഭാ
-            </button>
-            <button className="ft-btn ft-btn-green" onClick={() => handleAddChild(node.id)}>
-              +കു
-            </button>
-            <button className="ft-btn ft-btn-red" onClick={() => handleDelete(node.id)}>
-              🗑
-            </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => handleAddSpouse(node.id)}>+ഭാ</button>
+            <button onClick={() => handleAddChild(node.id)}>+കു</button>
+            <button onClick={() => handleDelete(node.id)}>🗑</button>
           </div>
         </div>
-
         <div style={{ fontSize: 12, color: "#6b7280", marginLeft: 30 }}>
-          ആകെ: {1 + (node.spouses?.length || 0) + countMembers(node.children)}
+          ആകെ: {countMembers(node)}
         </div>
-
         {!node.collapsed && (
           <>
             {(node.spouses || []).map((s, i) => (
-              <div key={i} className="ft-spouse">
-                <div className="ft-row">
-                  <input
-                    aria-label={`ഭാര്യ/ഭർത്താവ് ${i + 1}`}
-                    className="ft-input small"
-                    value={s}
-                    placeholder="ഭാര്യ/ഭർത്താവ്"
-                    onChange={(e) => handleUpdateSpouse(node.id, i, e.target.value)}
-                  />
-                  <button className="ft-btn ft-btn-red" onClick={() => handleDeleteSpouse(node.id, i)}>
-                    🗑
-                  </button>
-                </div>
+              <div key={i} style={{ marginLeft: 18, marginTop: 8 }}>
+                <input
+                  value={s}
+                  placeholder="ഭാര്യ/ഭർത്താവ്"
+                  onChange={(e) => handleUpdateSpouse(node.id, i, e.target.value)}
+                  style={{ width: "85%" }}
+                />
+                <button onClick={() => handleDeleteSpouse(node.id, i)}>🗑</button>
               </div>
             ))}
-            <div className="ft-children">
-              {(node.children || []).map((c) => (
+            <div style={{ marginLeft: 6, marginTop: 8 }}>
+              {node.children.map((c) => (
                 <Node key={c.id} node={c} level={level + 1} />
               ))}
             </div>
@@ -221,149 +169,29 @@ export default function FamilyTreeMalayalam() {
   );
 
   return (
-    <div className="ft-root">
-      <style>{`
-  :root { --bg: #f8fafc; --card: #ffffff; --accent: #4f46e5; --green: #10b981; --red: #ef4444; --gray:#6b7280; }
-  .ft-root { 
-    padding: 20px; 
-    font-family: Inter, sans-serif; 
-    max-width: 940px; 
-    margin: 8px auto; 
-    background: var(--bg); 
-    min-height: 100vh; 
-    box-sizing: border-box;
-  }
-  .ft-header { 
-    text-align: center; 
-    font-weight: 700; 
-    font-size: 20px; 
-    margin-bottom: 12px; 
-  }
-  .ft-controls { 
-    display:flex; 
-    gap:12px; 
-    flex-wrap:wrap; 
-    margin-bottom:12px; 
-  }
-  .ft-input { 
-    padding: 8px 10px; 
-    border-radius: 10px; 
-    border: 1px solid #e6e7eb; 
-    font-size: 14px; 
-    box-sizing: border-box;
-  }
-  .ft-input.small { 
-    width: 85%; 
-  }
-  .ft-row { 
-    display:flex; 
-    gap:8px; 
-    align-items:center; 
-    flex-wrap: wrap;
-  }
-  .ft-actions { 
-    display:flex; 
-    gap:8px; 
-    flex-wrap:wrap; 
-  }
-  .ft-btn { 
-    padding:6px 10px; 
-    border-radius: 8px; 
-    border: none; 
-    cursor: pointer; 
-    font-size:13px; 
-    flex: none; 
-  }
-  .ft-btn-indigo { background: var(--accent); color: white; }
-  .ft-btn-green { background: var(--green); color: white; }
-  .ft-btn-red { background: var(--red); color: white; }
-  .ft-btn-gray { background: var(--gray); color: white; }
-
-  /* MAIN FIXES */
-  .ft-node-branch { 
-    border-left: 3px solid rgba(99,102,241,0.08); 
-    margin-left: 0; /* remove cumulative margin-left */
-    padding-left: 12px; 
-    display: flex;
-    flex-direction: column;
-    max-width: 100%; /* prevent overflow */
-    box-sizing: border-box;
-    overflow-wrap: break-word; /* allow long names to wrap */
-  }
-
-  .ft-node { 
-    border-radius: 12px; 
-    padding: 10px; 
-    margin: 8px 0; 
-    word-break: break-word; /* wrap long content */
-  }
-  .ft-spouse { 
-    margin-left: 18px; 
-    margin-top: 8px; 
-  }
-  .ft-children { 
-    margin-left: 6px; 
-    margin-top: 8px; 
-    display: flex; 
-    flex-direction: column; 
-    flex-wrap: wrap; 
-    max-width: 100%;
-  }
-
-  @media screen and (max-width: 768px) {
-    .ft-row { flex-direction: column; align-items: flex-start; }
-    .ft-actions { flex-wrap: wrap; }
-    .ft-input { width: 100%; }
-    .ft-input.small { width: 100%; }
-  }
-`}</style>
-
-
+    <div style={{ padding: 20, fontFamily: "Inter, sans-serif", maxWidth: 940, margin: "8px auto" }}>
       <div style={{ marginBottom: 16, textAlign: "right" }}>
-        <button onClick={handleUpdateBackend} className="ft-btn ft-btn-green">
-          Update
-        </button>
+        <button onClick={handleUpdateBackend}>Update</button>
       </div>
 
-      <div className="ft-header">
-        ചാല അന്ത്രു ഹാജി കുടുംബ പരമ്പര (ആകെ അംഗങ്ങൾ: {2 + countMembers(tree.children)})
+      <div style={{ fontWeight: 700, fontSize: 20, textAlign: "center", marginBottom: 12 }}>
+        ചാല അന്ത്രു ഹാജി കുടുംബ പരമ്പര (ആകെ അംഗങ്ങൾ: {countMembers(tree)})
       </div>
 
-      <div className="ft-controls">
-        <div style={{ flex: 1 }}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-            പിതാവ്
-          </label>
-          <div className="ft-row">
-            <input
-              className="ft-input"
-              value={tree.father}
-              onChange={(e) => setTree({ ...tree, father: e.target.value })}
-              placeholder="പിതാവ്"
-            />
-          </div>
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-            ഭാര്യ
-          </label>
-          <div className="ft-row">
-            <input
-              className="ft-input"
-              value={tree.mother}
-              onChange={(e) => setTree({ ...tree, mother: e.target.value })}
-              placeholder="ഭാര്യ"
-            />
-          </div>
-        </div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+        <input
+          value={tree.father}
+          onChange={(e) => setTree({ ...tree, father: e.target.value })}
+          placeholder="പിതാവ്"
+        />
+        <input
+          value={tree.mother}
+          onChange={(e) => setTree({ ...tree, mother: e.target.value })}
+          placeholder="ഭാര്യ"
+        />
       </div>
 
-      <div>
-        {(tree.children || []).map((child) => (
-          <Node key={child.id} node={child} level={0} />
-        ))}
-
-      </div>
+      <Node node={tree} level={0} />
     </div>
   );
 }
