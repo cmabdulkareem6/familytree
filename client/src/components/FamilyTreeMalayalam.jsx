@@ -134,7 +134,7 @@ export default function FamilyTreeMalayalam() {
   const handleUpdateBackend = async () => {
     try {
       const res = await axios.post(
-        "http://localhost:3000/update-family-tree",
+        "https://familytree-365c.onrender.com/update-family-tree",
         tree,
         { headers: { "Content-Type": "application/json" } }
       );
