@@ -43,8 +43,11 @@ export default function FamilyTreeMalayalam() {
   }, []);
 
   // Count members recursively
-  const countMembers = (nodes) =>
-    (nodes || []).reduce((sum, n) => sum + 1 + countMembers(n.children), 0);
+const countMembers = (nodes) =>
+  (nodes || []).reduce(
+    (sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children),
+    0
+  );
 
   // Tree update helpers
   const updateName = (nodes, id, name) =>
