@@ -12,19 +12,19 @@ export default function FamilyTreeMalayalam() {
     (nodes || []).map((n) =>
       typeof n === "string"
         ? {
-          id: makeId(),
-          name: n,
-          spouses: [],
-          children: [],
-          collapsed: true,
-        }
+            id: makeId(),
+            name: n,
+            spouses: [],
+            children: [],
+            collapsed: true,
+          }
         : {
-          id: n.id || makeId(),
-          name: n.name || "",
-          spouses: n.spouses || [],
-          children: normalizeTree(n.children || []),
-          collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true,
-        }
+            id: n.id || makeId(),
+            name: n.name || "",
+            spouses: n.spouses || [],
+            children: normalizeTree(n.children || []),
+            collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true,
+          }
     );
 
   const [tree, setTree] = useState(() => ({}));
@@ -43,158 +43,96 @@ export default function FamilyTreeMalayalam() {
   }, []);
 
   // Count members recursively
-  const countMembers = (nodes) =>
-    (nodes || []).reduce(
-      (sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children),
-      0
-    );
+const countMembers = (nodes) =>
+  (nodes || []).reduce(
+    (sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children),
+    0
+  );
 
   // Tree update helpers
-const updateName = (nodes, id, name) =>
-  nodes.map((n) => {
-    if (n.id === id) return { ...n, name };
-    if (!n.children?.length) return n; // no children, return same object
-    const updatedChildren = updateName(n.children, id, name);
-    if (updatedChildren === n.children) return n; // unchanged
-    return { ...n, children: updatedChildren };
-  });
+  const updateName = (nodes, id, name) =>
+    nodes.map((n) =>
+      n.id === id
+        ? { ...n, name }
+        : { ...n, children: updateName(n.children, id, name) }
+    );
 
-const addSpouse = (nodes, id) =>
-  nodes.map((n) => {
-    if (n.id === id) return { ...n, spouses: [...(n.spouses || []), ""] };
-    if (!n.children?.length) return n;
-    const updatedChildren = addSpouse(n.children, id);
-    if (updatedChildren === n.children) return n;
-    return { ...n, children: updatedChildren };
-  });
+  const addSpouse = (nodes, id) =>
+    nodes.map((n) =>
+      n.id === id
+        ? { ...n, spouses: [...(n.spouses || []), ""] }
+        : { ...n, children: addSpouse(n.children, id) }
+    );
 
-const updateSpouse = (nodes, id, idx, name) =>
-  nodes.map((n) => {
-    if (n.id === id) {
-      const copy = [...(n.spouses || [])];
-      copy[idx] = name;
-      return { ...n, spouses: copy };
-    }
-    if (!n.children?.length) return n;
-    const updatedChildren = updateSpouse(n.children, id, idx, name);
-    if (updatedChildren === n.children) return n;
-    return { ...n, children: updatedChildren };
-  });
+  const updateSpouse = (nodes, id, idx, name) =>
+    nodes.map((n) => {
+      if (n.id === id) {
+        const copy = [...(n.spouses || [])];
+        copy[idx] = name;
+        return { ...n, spouses: copy };
+      }
+      return { ...n, children: updateSpouse(n.children, id, idx, name) };
+    });
 
+  const deleteSpouse = (nodes, id, idx) =>
+    nodes.map((n) => {
+      if (n.id === id) {
+        const copy = [...(n.spouses || [])];
+        copy.splice(idx, 1);
+        return { ...n, spouses: copy };
+      }
+      return { ...n, children: deleteSpouse(n.children, id, idx) };
+    });
 
-const deleteSpouse = (nodes, id, idx) =>
-  nodes.map((n) => {
-    if (n.id === id) {
-      const copy = [...(n.spouses || [])];
-      copy.splice(idx, 1);
-      return { ...n, spouses: copy };
-    }
-    if (!n.children?.length) return n;
-    const updatedChildren = deleteSpouse(n.children, id, idx);
-    if (updatedChildren === n.children) return n;
-    return { ...n, children: updatedChildren };
-  });
+  const addChildToNode = (nodes, id) =>
+    nodes.map((n) =>
+      n.id === id
+        ? {
+            ...n,
+            children: [
+              ...(n.children || []),
+              {
+                id: makeId(),
+                name: "",
+                spouses: [],
+                children: [],
+                collapsed: false,
+              },
+            ],
+          }
+        : { ...n, children: addChildToNode(n.children, id) }
+    );
 
-const addChildToNode = (nodes, id) =>
-  nodes.map((n) => {
-    if (n.id === id)
-      return {
-        ...n,
-        children: [
-          ...(n.children || []),
-          { id: makeId(), name: "", spouses: [], children: [], collapsed: false },
-        ],
-      };
-    if (!n.children?.length) return n;
-    const updatedChildren = addChildToNode(n.children, id);
-    if (updatedChildren === n.children) return n;
-    return { ...n, children: updatedChildren };
-  });
+  const deleteNode = (nodes, id) =>
+    nodes
+      .filter((n) => n.id !== id)
+      .map((n) => ({ ...n, children: deleteNode(n.children, id) }));
 
-const deleteNode = (nodes, id) => {
-  let changed = false;
-  const filtered = nodes.filter((n) => {
-    if (n.id === id) {
-      changed = true;
-      return false;
-    }
-    return true;
-  });
-  const mapped = filtered.map((n) => {
-    if (!n.children?.length) return n;
-    const updatedChildren = deleteNode(n.children, id);
-    if (updatedChildren === n.children) return n;
-    changed = true;
-    return { ...n, children: updatedChildren };
-  });
-  return changed ? mapped : nodes;
-};
+  const toggleCollapse = (nodes, id) =>
+    nodes.map((n) =>
+      n.id === id
+        ? { ...n, collapsed: !n.collapsed }
+        : { ...n, children: toggleCollapse(n.children, id) }
+    );
 
-
-const toggleCollapse = (nodes, id) =>
-  nodes.map((n) => {
-    if (n.id === id) return { ...n, collapsed: !n.collapsed };
-    if (!n.children?.length) return n;
-    const updatedChildren = toggleCollapse(n.children, id);
-    if (updatedChildren === n.children) return n;
-    return { ...n, children: updatedChildren };
-  });
   // Handlers
-  // Name update
   const handleUpdateName = (id, name) =>
-    setTree((prev) => ({
-      ...prev,
-      children: updateName(prev.children, id, name),
-    }));
-
-  // Add spouse
+    setTree((prev) => ({ ...prev, children: updateName(prev.children, id, name) }));
   const handleAddSpouse = (id) =>
-    setTree((prev) => ({
-      ...prev,
-      children: addSpouse(prev.children, id),
-    }));
-
-  // Update spouse name
+    setTree((prev) => ({ ...prev, children: addSpouse(prev.children, id) }));
   const handleUpdateSpouse = (id, idx, name) =>
     setTree((prev) => ({
       ...prev,
       children: updateSpouse(prev.children, id, idx, name),
     }));
-
-  // Delete spouse
   const handleDeleteSpouse = (id, idx) =>
-    setTree((prev) => ({
-      ...prev,
-      children: deleteSpouse(prev.children, id, idx),
-    }));
-
-  // Add child
+    setTree((prev) => ({ ...prev, children: deleteSpouse(prev.children, id, idx) }));
   const handleAddChild = (id) =>
-    setTree((prev) => ({
-      ...prev,
-      children: addChildToNode(prev.children, id),
-    }));
-
-  // Delete node
+    setTree((prev) => ({ ...prev, children: addChildToNode(prev.children, id) }));
   const handleDelete = (id) =>
-    setTree((prev) => ({
-      ...prev,
-      children: deleteNode(prev.children, id),
-    }));
-
-  // Toggle collapse
+    setTree((prev) => ({ ...prev, children: deleteNode(prev.children, id) }));
   const handleToggle = (id) =>
-    setTree((prev) => ({
-      ...prev,
-      children: toggleCollapse(prev.children, id),
-    }));
-
-  // Father and Mother inputs
-  const handleFatherChange = (value) =>
-    setTree((prev) => ({ ...prev, father: value }));
-
-  const handleMotherChange = (value) =>
-    setTree((prev) => ({ ...prev, mother: value }));
+    setTree((prev) => ({ ...prev, children: toggleCollapse(prev.children, id) }));
 
   const handleUpdateBackend = async () => {
     try {
@@ -212,7 +150,6 @@ const toggleCollapse = (nodes, id) =>
   };
 
   // Recursive Node component
-
   const Node = ({ node, level }) => (
     <div className="ft-node-branch">
       <div
@@ -394,7 +331,7 @@ const toggleCollapse = (nodes, id) =>
             <input
               className="ft-input"
               value={tree.father}
-              onChange={(e) => handleFatherChange(e.target.value)}
+              onChange={(e) => setTree({ ...tree, father: e.target.value })}
               placeholder="പിതാവ്"
             />
           </div>
@@ -407,7 +344,7 @@ const toggleCollapse = (nodes, id) =>
             <input
               className="ft-input"
               value={tree.mother}
-              onChange={(e) => handleMotherChange(e.target.value)}
+              onChange={(e) => setTree({ ...tree, mother: e.target.value })}
               placeholder="ഭാര്യ"
             />
           </div>
