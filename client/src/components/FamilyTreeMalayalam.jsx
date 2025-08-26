@@ -330,11 +330,13 @@ const countMembers = (nodes) =>
           </label>
           <div className="ft-row">
             <input
-              className="ft-input"
-              value={tree.father}
-              onChange={(e) => setTree({ ...tree, father: e.target.value })}
-              placeholder="പിതാവ്"
-            />
+  className="ft-input"
+  value={tree.father}
+  onChange={(e) =>
+    setTree((prev) => ({ ...prev, father: e.target.value }))
+  }
+  placeholder="പിതാവ്"
+/>
           </div>
         </div>
         <div style={{ flex: 1 }}>
@@ -343,11 +345,13 @@ const countMembers = (nodes) =>
           </label>
           <div className="ft-row">
             <input
-              className="ft-input"
-              value={tree.mother}
-              onChange={(e) => setTree({ ...tree, mother: e.target.value })}
-              placeholder="ഭാര്യ"
-            />
+  className="ft-input"
+  value={tree.mother}
+  onChange={(e) =>
+    setTree((prev) => ({ ...prev, mother: e.target.value }))
+  }
+  placeholder="ഭാര്യ"
+/>
           </div>
         </div>
       </div>
