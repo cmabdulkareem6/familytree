@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 export default function FamilyTreeMalayalam() {
@@ -116,9 +116,8 @@ const countMembers = (nodes) =>
     );
 
   // Handlers
-const handleUpdateName = useCallback((id, name) => {
-  setTree((prev) => ({ ...prev, children: updateName(prev.children, id, name) }));
-}, []);
+  const handleUpdateName = (id, name) =>
+    setTree((prev) => ({ ...prev, children: updateName(prev.children, id, name) }));
   const handleAddSpouse = (id) =>
     setTree((prev) => ({ ...prev, children: addSpouse(prev.children, id) }));
   const handleUpdateSpouse = (id, idx, name) =>
@@ -151,8 +150,8 @@ const handleUpdateName = useCallback((id, name) => {
   };
 
   // Recursive Node component
-  const Node = ({ node, level }) => (
-    <div className="ft-node-branch">
+  const Node = React.memo(({ node, level }) => {
+  <div className="ft-node-branch">
       <div
         className="ft-node"
         style={{ backgroundColor: colors[level % colors.length] }}
@@ -212,7 +211,7 @@ const handleUpdateName = useCallback((id, name) => {
         )}
       </div>
     </div>
-  );
+});
 
   return (
     <div className="ft-root">
