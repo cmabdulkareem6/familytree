@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import fetch from "node-fetch"; // for Node <18; remove if using Node 18+ with global fetch
 
 const app = express();
 app.use(
@@ -12,38 +13,17 @@ app.use(
 );
 app.use(express.json());
 
-// MongoDB connection function with retry
-const connectWithRetry = async () => {
-  try {
-    await mongoose.connect(
-      "mongodb+srv://familytree:familyuser@cluster0.htdn3zc.mongodb.net/familyTree",
-      { 
-        useNewUrlParser: true, 
-        useUnifiedTopology: true 
-      }
-    );
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error("MongoDB connection error:", err);
-    console.log("Retrying in 5 seconds...");
-    setTimeout(connectWithRetry, 5000); // Retry after 5 seconds
-  }
-};
+// MongoDB connection
+await mongoose
+  .connect("mongodb+srv://familytree:familyuser@cluster0.htdn3zc.mongodb.net/familyTree")
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
-// Call the connection function
-connectWithRetry();
-
-// Reconnect if disconnected (after sleep)
-mongoose.connection.on("disconnected", () => {
-  console.log("MongoDB disconnected. Reconnecting...");
-  connectWithRetry();
-});
-
-// Schemas
+// Schema definitions
 const memberSchema = new mongoose.Schema({
   name: String,
   spouses: [String],
-  children: [Object],
+  children: [Object], // allow nested structure
 });
 
 const treeSchema = new mongoose.Schema({
@@ -87,6 +67,22 @@ app.post("/update-family-tree", async (req, res) => {
   }
 });
 
+// Self-ping function to prevent Render sleep
+const selfPing = async () => {
+  try {
+    await fetch("https://familytree-steel-mu.onrender.com/family-tree"); // replace with your Render URL
+    console.log("Self-pinged server at", new Date().toLocaleTimeString());
+  } catch (err) {
+    console.error("Self-ping failed:", err.message);
+  }
+};
+
+// Ping every 10 minutes
+setInterval(selfPing, 10 * 60 * 1000);
+
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+  selfPing(); // optional initial ping on start
+});
