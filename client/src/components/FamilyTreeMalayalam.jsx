@@ -1,13 +1,16 @@
 import React, { useReducer, useEffect, useState } from "react";
 import axios from "axios";
 
+
 const colors = ["#fef9c3", "#dbeafe", "#dcfce7", "#fde2e2", "#f3e8ff"];
 const makeId = () => `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 
 const updateNode = (nodes, id, updater) =>
   nodes.map((n) =>
     n.id === id ? updater(n) : { ...n, children: updateNode(n.children || [], id, updater) }
   );
+
 
 function treeReducer(state, action) {
   switch (action.type) {
@@ -32,39 +35,58 @@ function treeReducer(state, action) {
   }
 }
 
+
 const countMembers = (nodes) =>
   (nodes || []).reduce((sum, n) => sum + 1 + (n.spouses?.length || 0) + countMembers(n.children), 0);
 
+
 export default function FamilyTreeMalayalam() {
   const [tree, dispatch] = useReducer(treeReducer, { father: "", mother: "", children: [] });
+  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
+    setLoading(true);
     axios.get("https://familytree-365c.onrender.com/family-tree").then(res => {
       const data = res.data || {};
       const normalizeTree = nodes => (nodes || []).map(n => typeof n === "string" ? { id: makeId(), name: n, spouses: [], children: [], collapsed: true } : { id: n.id || makeId(), name: n.name || "", spouses: n.spouses || [], children: normalizeTree(n.children || []), collapsed: typeof n.collapsed === "boolean" ? n.collapsed : true });
       dispatch({ type: "SET_TREE", payload: { father: data.father || "", mother: data.mother || "", children: normalizeTree(data.children || []) } });
-    }).catch(err => console.error("Failed to fetch family tree:", err));
+    }).catch(err => console.error("Failed to fetch family tree:", err)).finally(() => setLoading(false));
   }, []);
 
-const handleUpdateBackend = async () => {
-  const password = prompt("Enter password to update family tree:");
-  if (password === "ah2211") {
-    try {
-      const res = await axios.post(
-        "https://familytree-365c.onrender.com/update-family-tree",
-        tree,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      dispatch({ type: "SET_TREE", payload: res.data });
-      alert("Family tree updated!");
-    } catch (err) {
-      console.error("Update failed:", err);
-      alert("Update failed.");
+
+  const handleUpdateBackend = async () => {
+    const password = prompt("Enter password to update family tree:");
+    if (password === "ah2211") {
+      try {
+        setLoading(true);
+        const res = await axios.post(
+          "https://familytree-365c.onrender.com/update-family-tree",
+          tree,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        dispatch({ type: "SET_TREE", payload: res.data });
+        alert("Family tree updated!");
+      } catch (err) {
+        console.error("Update failed:", err);
+        alert("Update failed.");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      alert("Incorrect password!");
     }
-  } else {
-    alert("Incorrect password!");
+  };
+
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <div style={{ width: 40, height: 40, border: "4px solid #e5e7eb", borderTop: "4px solid #4f46e5", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+      </div>
+    );
   }
-};
 
   const Node = ({ node, level }) => {
     const [name, setName] = useState(node.name);
