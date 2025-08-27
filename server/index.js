@@ -3,20 +3,47 @@ import mongoose from "mongoose";
 import cors from "cors";
 
 const app = express();
-app.use(cors({ origin: "https://familytree-steel-mu.vercel.app", methods: ["GET", "POST"], allowedHeaders: ["Content-Type"] }));
+app.use(
+  cors({
+    origin: "https://familytree-steel-mu.vercel.app",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 app.use(express.json());
 
-// MongoDB connection
-await mongoose
-  .connect("mongodb+srv://familytree:familyuser@cluster0.htdn3zc.mongodb.net/familyTree")
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+// MongoDB connection function with retry
+const connectWithRetry = async () => {
+  try {
+    await mongoose.connect(
+      "mongodb+srv://familytree:familyuser@cluster0.htdn3zc.mongodb.net/familyTree",
+      { 
+        useNewUrlParser: true, 
+        useUnifiedTopology: true 
+      }
+    );
+    console.log("MongoDB connected");
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    console.log("Retrying in 5 seconds...");
+    setTimeout(connectWithRetry, 5000); // Retry after 5 seconds
+  }
+};
 
-// Schema definitions
+// Call the connection function
+connectWithRetry();
+
+// Reconnect if disconnected (after sleep)
+mongoose.connection.on("disconnected", () => {
+  console.log("MongoDB disconnected. Reconnecting...");
+  connectWithRetry();
+});
+
+// Schemas
 const memberSchema = new mongoose.Schema({
   name: String,
   spouses: [String],
-  children: [Object], // allow nested structure
+  children: [Object],
 });
 
 const treeSchema = new mongoose.Schema({
@@ -61,5 +88,5 @@ app.post("/update-family-tree", async (req, res) => {
 });
 
 // Start server
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
