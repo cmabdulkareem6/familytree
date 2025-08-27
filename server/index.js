@@ -6,7 +6,11 @@ import fetch from "node-fetch"; // for Node <18; remove if using Node 18+ with g
 const app = express();
 app.use(
   cors({
-    origin: "https://familytree-steel-mu.vercel.app",
+    origin: [
+      "https://familytree-steel-mu.vercel.app",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000"
+    ],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
