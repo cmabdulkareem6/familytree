@@ -77,8 +77,8 @@ const handleUpdateBackend = async () => {
             <button className="ft-btn ft-btn-gray" onClick={() => dispatch({ type: "TOGGLE_COLLAPSE", id: node.id })}>{node.collapsed ? "+" : "-"}</button>
             <input className="ft-input" value={name} placeholder="പേര്" onChange={e => setName(e.target.value)} onBlur={() => dispatch({ type: "UPDATE_NAME", id: node.id, name })} />
             <div className="ft-actions">
-              <button className="ft-btn ft-btn-indigo" onClick={() => dispatch({ type: "ADD_SPOUSE", id: node.id })}>+💑</button>
-              <button className="ft-btn ft-btn-green" onClick={() => dispatch({ type: "ADD_CHILD", id: node.id })}>+👩‍👦‍👦</button>
+              <button className="ft-btn ft-btn-indigo" onClick={() => dispatch({ type: "ADD_SPOUSE", id: node.id })}>+❤</button>
+              <button className="ft-btn ft-btn-green" onClick={() => dispatch({ type: "ADD_CHILD", id: node.id })}>+👨🏻‍🦱</button>
               <button className="ft-btn ft-btn-red" onClick={() => dispatch({ type: "DELETE_NODE", id: node.id })}>🗑</button>
             </div>
           </div>
