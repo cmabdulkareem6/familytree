@@ -46,16 +46,25 @@ export default function FamilyTreeMalayalam() {
     }).catch(err => console.error("Failed to fetch family tree:", err));
   }, []);
 
-  const handleUpdateBackend = async () => {
+const handleUpdateClick = async () => {
+  const password = prompt("Enter password to update family tree:");
+  if (password === "ah2211") {
     try {
-      const res = await axios.post("https://familytree-365c.onrender.com/update-family-tree", tree, { headers: { "Content-Type": "application/json" } });
+      const res = await axios.post(
+        "https://familytree-365c.onrender.com/update-family-tree",
+        tree,
+        { headers: { "Content-Type": "application/json" } }
+      );
       dispatch({ type: "SET_TREE", payload: res.data });
       alert("Family tree updated!");
     } catch (err) {
       console.error("Update failed:", err);
       alert("Update failed.");
     }
-  };
+  } else {
+    alert("Incorrect password!");
+  }
+};
 
   const Node = ({ node, level }) => {
     const [name, setName] = useState(node.name);
