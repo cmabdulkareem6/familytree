@@ -46,7 +46,7 @@ export default function FamilyTreeMalayalam() {
     }).catch(err => console.error("Failed to fetch family tree:", err));
   }, []);
 
-const handleUpdateClick = async () => {
+const handleUpdateBackend = async () => {
   const password = prompt("Enter password to update family tree:");
   if (password === "ah2211") {
     try {
