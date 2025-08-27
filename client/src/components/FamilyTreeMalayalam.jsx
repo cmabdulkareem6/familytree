@@ -67,44 +67,105 @@ const handleUpdateBackend = async () => {
 };
 
   const Node = ({ node, level }) => {
-    const [name, setName] = useState(node.name);
-    useEffect(() => setName(node.name), [node.name]);
+  return (
+    <div className="ft-node-branch">
+      <div
+        className="ft-node"
+        style={{ backgroundColor: colors[level % colors.length] }}
+      >
+        <div className="ft-row">
+          <button
+            className="ft-btn ft-btn-gray"
+            onClick={() =>
+              dispatch({ type: "TOGGLE_COLLAPSE", id: node.id })
+            }
+          >
+            {node.collapsed ? "+" : "-"}
+          </button>
 
-    return (
-      <div className="ft-node-branch">
-        <div className="ft-node" style={{ backgroundColor: colors[level % colors.length] }}>
-          <div className="ft-row">
-            <button className="ft-btn ft-btn-gray" onClick={() => dispatch({ type: "TOGGLE_COLLAPSE", id: node.id })}>{node.collapsed ? "+" : "-"}</button>
-            <input className="ft-input" value={name} placeholder="പേര്" onChange={e => setName(e.target.value)} onBlur={() => dispatch({ type: "UPDATE_NAME", id: node.id, name })} />
-            <div className="ft-actions">
-              <button className="ft-btn ft-btn-indigo" onClick={() => dispatch({ type: "ADD_SPOUSE", id: node.id })}>+ഭാ</button>
-              <button className="ft-btn ft-btn-green" onClick={() => dispatch({ type: "ADD_CHILD", id: node.id })}>+കു</button>
-              <button className="ft-btn ft-btn-red" onClick={() => dispatch({ type: "DELETE_NODE", id: node.id })}>🗑</button>
-            </div>
+          {/* Node Name Input */}
+          <input
+            className="ft-input"
+            value={node.name}
+            placeholder="പേര്"
+            onChange={(e) =>
+              dispatch({
+                type: "UPDATE_NAME",
+                id: node.id,
+                name: e.target.value,
+              })
+            }
+          />
+
+          <div className="ft-actions">
+            <button
+              className="ft-btn ft-btn-indigo"
+              onClick={() => dispatch({ type: "ADD_SPOUSE", id: node.id })}
+            >
+              +ഭാ
+            </button>
+            <button
+              className="ft-btn ft-btn-green"
+              onClick={() => dispatch({ type: "ADD_CHILD", id: node.id })}
+            >
+              +കു
+            </button>
+            <button
+              className="ft-btn ft-btn-red"
+              onClick={() => dispatch({ type: "DELETE_NODE", id: node.id })}
+            >
+              🗑
+            </button>
           </div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginLeft: 30 }}>ആകെ: {1 + (node.spouses?.length || 0) + countMembers(node.children)}</div>
-
-          {!node.collapsed && <>
-            {(node.spouses || []).map((s, i) => {
-              const [spouseName, setSpouseName] = useState(s);
-              useEffect(() => setSpouseName(s), [s]);
-              return (
-                <div key={i} className="ft-spouse">
-                  <div className="ft-row">
-                    <input className="ft-input small" value={spouseName} placeholder="ഭാര്യ/ഭർത്താവ്" onChange={e => setSpouseName(e.target.value)} onBlur={() => dispatch({ type: "UPDATE_SPOUSE", id: node.id, idx: i, name: spouseName })} />
-                    <button className="ft-btn ft-btn-red" onClick={() => dispatch({ type: "DELETE_SPOUSE", id: node.id, idx: i })}>🗑</button>
-                  </div>
-                </div>
-              )
-            })}
-            <div className="ft-children">
-              {(node.children || []).map(c => <Node key={c.id} node={c} level={level + 1} />)}
-            </div>
-          </>}
         </div>
+
+        <div style={{ fontSize: 12, color: "#6b7280", marginLeft: 30 }}>
+          ആകെ: {1 + (node.spouses?.length || 0) + countMembers(node.children)}
+        </div>
+
+        {/* Spouses */}
+        {!node.collapsed &&
+          (node.spouses || []).map((s, i) => (
+            <div key={i} className="ft-spouse">
+              <div className="ft-row">
+                <input
+                  className="ft-input small"
+                  value={s}
+                  placeholder="ഭാര്യ/ഭർത്താവ്"
+                  onChange={(e) =>
+                    dispatch({
+                      type: "UPDATE_SPOUSE",
+                      id: node.id,
+                      idx: i,
+                      name: e.target.value,
+                    })
+                  }
+                />
+                <button
+                  className="ft-btn ft-btn-red"
+                  onClick={() =>
+                    dispatch({ type: "DELETE_SPOUSE", id: node.id, idx: i })
+                  }
+                >
+                  🗑
+                </button>
+              </div>
+            </div>
+          ))}
+
+        {/* Children */}
+        {!node.collapsed && node.children?.length > 0 && (
+          <div className="ft-children">
+            {node.children.map((c) => (
+              <Node key={c.id} node={c} level={level + 1} />
+            ))}
+          </div>
+        )}
       </div>
-    );
-  };
+    </div>
+  );
+};
+
 
   return (
     <div className="ft-root">
