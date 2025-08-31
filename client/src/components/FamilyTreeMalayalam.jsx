@@ -226,7 +226,7 @@ export default function FamilyTreeMalayalam() {
                 onClick={() => dispatch({ type: "DELETE_NODE", id: node.id })}
                 title="Delete"
               >
-                🗑 Delete
+                🗑
               </button>
             </div>
           </div>
