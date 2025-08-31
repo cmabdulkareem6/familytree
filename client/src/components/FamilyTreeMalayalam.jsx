@@ -475,7 +475,7 @@ export default function FamilyTreeMalayalam() {
 
       {/* Header */}
       <div className="ft-header">
-        ചാല അന്ത്രു ഹാജി കുടുംബ പരമ്പര (ആകെ അംഗങ്ങൾ: {2 + countMembers(tree.children)})
+        ചാല അന്ത്രു ഹാജി കുടുംബ പരമ്പര (ആകെ അംഗങ്ങൾ: {2 + countMembers(tree.children) - 4})
       </div>
 
       {/* Controls */}
