@@ -212,14 +212,14 @@ export default function FamilyTreeMalayalam() {
                 onClick={() => dispatch({ type: "ADD_SPOUSE", id: node.id })}
                 title="Add spouse"
               >
-                ❤ Spouse
+                +❤
               </button>
               <button
                 className="ft-btn ft-btn-green"
                 onClick={() => dispatch({ type: "ADD_CHILD", id: node.id })}
                 title="Add child"
               >
-                + Child
+                +C
               </button>
               <button
                 className="ft-btn ft-btn-red"
