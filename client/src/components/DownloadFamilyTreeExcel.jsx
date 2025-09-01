@@ -122,7 +122,15 @@ export default function DownloadFamilyTreeExcel({ tree }) {
       return;
     }
 
-    const rootName = tree.mother ? `${tree.father || ""}-${tree.mother || ""}` : (tree.father || "");
+let rootName = "";
+if (tree.father || tree.mother) {
+  // Root tree
+  rootName = tree.mother ? `${tree.father || ""}-${tree.mother || ""}` : (tree.father || "");
+} else {
+  // Child node subtree
+  rootName = tree.spouses?.length ? `${tree.name}-${tree.spouses.join("-")}` : tree.name || "";
+}
+
     let rows = [];
     if (Array.isArray(tree.children) && tree.children.length > 0) {
       rows = buildRowsByLevels(tree.children, [rootName]);
@@ -167,7 +175,7 @@ export default function DownloadFamilyTreeExcel({ tree }) {
 
   return (
     <button onClick={handleDownload} className="ft-btn ft-btn-indigo">
-      ⤓ Download Excel
+      ⤓
     </button>
   );
 }

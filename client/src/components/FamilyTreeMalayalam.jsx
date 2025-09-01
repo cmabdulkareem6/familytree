@@ -169,124 +169,172 @@ export default function FamilyTreeMalayalam() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="ft-loading">
-        <div className="ft-spinner"></div>
-        <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+if (loading) {
+  return (
+    <div className="ft-loading">
+      <div className="tree-spinner">
+        <div className="node"></div>
+        <div className="node"></div>
+        <div className="node"></div>
       </div>
-    );
-  }
+      <p className="loading-text">Connecting generations...</p>
 
-  const Node = ({ node, level }) => {
-    const [name, setName] = useState(node.name);
-    useEffect(() => setName(node.name), [node.name]);
+      <style>{`
+        .ft-loading {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          background: var(--bg, #f9fafb);
+        }
 
-    const toggle = () =>
-      dispatch({ type: "TOGGLE_COLLAPSE", id: node.id });
+        .tree-spinner {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
 
-    return (
-      <div className="ft-node-branch">
-        <div
-          className="ft-node"
-          style={{ backgroundColor: colors[level % colors.length] }}
-        >
-          <div className="ft-row">
-            <button className="ft-toggle" onClick={toggle} aria-label="Toggle">
-              {node.collapsed ? "+" : "-"}
+        .node {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #6366f1;
+          animation: bounce 0.8s infinite alternate;
+        }
+
+        .node:nth-child(2) { animation-delay: 0.2s; }
+        .node:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+          from { transform: scale(0.5); opacity: 0.5; }
+          to { transform: scale(1.2); opacity: 1; }
+        }
+
+        .loading-text {
+          font-size: 16px;
+          color: #4b5563;
+          font-weight: 500;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+
+
+const Node = ({ node, level }) => {
+  const [name, setName] = useState(node.name);
+  useEffect(() => setName(node.name), [node.name]);
+
+  const toggle = () =>
+    dispatch({ type: "TOGGLE_COLLAPSE", id: node.id });
+
+  return (
+    <div className="ft-node-branch">
+      <div
+        className="ft-node"
+        style={{ backgroundColor: colors[level % colors.length] }}
+      >
+        <div className="ft-row">
+          <button className="ft-toggle" onClick={toggle} aria-label="Toggle">
+            {node.collapsed ? "+" : "-"}
+          </button>
+
+          <input
+            className="ft-input grow"
+            value={name}
+            placeholder="പേര്"
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() =>
+              dispatch({ type: "UPDATE_NAME", id: node.id, name })
+            }
+          />
+
+          <div className="ft-actions">
+            <button
+              className="ft-btn ft-btn-indigo"
+              onClick={() => dispatch({ type: "ADD_SPOUSE", id: node.id })}
+              title="Add spouse"
+            >
+              +❤
+            </button>
+            <button
+              className="ft-btn ft-btn-green"
+              onClick={() => dispatch({ type: "ADD_CHILD", id: node.id })}
+              title="Add child"
+            >
+              +C
+            </button>
+            <button
+              className="ft-btn ft-btn-red"
+              onClick={() => dispatch({ type: "DELETE_NODE", id: node.id })}
+              title="Delete"
+            >
+              🗑
             </button>
 
-            <input
-              className="ft-input grow"
-              value={name}
-              placeholder="പേര്"
-              onChange={(e) => setName(e.target.value)}
-              onBlur={() =>
-                dispatch({ type: "UPDATE_NAME", id: node.id, name })
-              }
-            />
-
-            <div className="ft-actions">
-              <button
-                className="ft-btn ft-btn-indigo"
-                onClick={() => dispatch({ type: "ADD_SPOUSE", id: node.id })}
-                title="Add spouse"
-              >
-                +❤
-              </button>
-              <button
-                className="ft-btn ft-btn-green"
-                onClick={() => dispatch({ type: "ADD_CHILD", id: node.id })}
-                title="Add child"
-              >
-                +C
-              </button>
-              <button
-                className="ft-btn ft-btn-red"
-                onClick={() => dispatch({ type: "DELETE_NODE", id: node.id })}
-                title="Delete"
-              >
-                🗑
-              </button>
-            </div>
+            {/* ✅ Download subtree for this node */}
+            <DownloadFamilyTreeExcel tree={node} />
           </div>
-
-          <div className="ft-badge">
-            ആകെ: {1 + (node.spouses?.length || 0) + countMembers(node.children)}
-          </div>
-
-          {!node.collapsed && (
-            <>
-              {(node.spouses || []).map((s, i) => {
-                const [spouseName, setSpouseName] = useState(s);
-                useEffect(() => setSpouseName(s), [s]);
-
-                return (
-                  <div key={i} className="ft-spouse">
-                    <div className="ft-row">
-                      <input
-                        className="ft-input small"
-                        value={spouseName}
-                        placeholder="Husband/Wife"
-                        onChange={(e) => setSpouseName(e.target.value)}
-                        onBlur={() =>
-                          dispatch({
-                            type: "UPDATE_SPOUSE",
-                            id: node.id,
-                            idx: i,
-                            name: spouseName,
-                          })
-                        }
-                      />
-                      <button
-                        className="ft-btn ft-btn-red"
-                        onClick={() =>
-                          dispatch({
-                            type: "DELETE_SPOUSE",
-                            id: node.id,
-                            idx: i,
-                          })
-                        }
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-
-
-              <div className="ft-children">
-                {(node.children || []).map((c) => (
-                  <Node key={c.id} node={c} level={level + 1} />
-                ))}
-              </div>
-            </>
-          )}
         </div>
+
+        <div className="ft-badge">
+          ആകെ: {1 + (node.spouses?.length || 0) + countMembers(node.children)}
+        </div>
+
+        {!node.collapsed && (
+          <>
+            {(node.spouses || []).map((s, i) => {
+              const [spouseName, setSpouseName] = useState(s);
+              useEffect(() => setSpouseName(s), [s]);
+
+              return (
+                <div key={i} className="ft-spouse">
+                  <div className="ft-row">
+                    <input
+                      className="ft-input small"
+                      value={spouseName}
+                      placeholder="Husband/Wife"
+                      onChange={(e) => setSpouseName(e.target.value)}
+                      onBlur={() =>
+                        dispatch({
+                          type: "UPDATE_SPOUSE",
+                          id: node.id,
+                          idx: i,
+                          name: spouseName,
+                        })
+                      }
+                    />
+                    <button
+                      className="ft-btn ft-btn-red"
+                      onClick={() =>
+                        dispatch({
+                          type: "DELETE_SPOUSE",
+                          id: node.id,
+                          idx: i,
+                        })
+                      }
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="ft-children">
+              {(node.children || []).map((c) => (
+                <Node key={c.id} node={c} level={level + 1} />
+              ))}
+            </div>
+          </>
+        )}
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   return (
     <div className="ft-root">
