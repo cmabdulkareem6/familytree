@@ -118,20 +118,20 @@ export default function FamilyTreeMalayalam() {
           (nodes || []).map((n) =>
             typeof n === "string"
               ? {
-                  id: makeId(),
-                  name: n,
-                  spouses: [],
-                  children: [],
-                  collapsed: true,
-                }
+                id: makeId(),
+                name: n,
+                spouses: [],
+                children: [],
+                collapsed: true,
+              }
               : {
-                  id: n.id || makeId(),
-                  name: n.name || "",
-                  spouses: n.spouses || [],
-                  children: normalizeTree(n.children || []),
-                  collapsed:
-                    typeof n.collapsed === "boolean" ? n.collapsed : true,
-                }
+                id: n.id || makeId(),
+                name: n.name || "",
+                spouses: n.spouses || [],
+                children: normalizeTree(n.children || []),
+                collapsed:
+                  typeof n.collapsed === "boolean" ? n.collapsed : true,
+              }
           );
         dispatch({
           type: "SET_TREE",
@@ -237,38 +237,44 @@ export default function FamilyTreeMalayalam() {
 
           {!node.collapsed && (
             <>
-              {(node.spouses || []).map((s, i) => (
-                <div key={i} className="ft-spouse">
-                  <div className="ft-row">
-                    {/* no hook-in-loop: bind directly to state via dispatch */}
-                    <input
-                      className="ft-input small"
-                      value={s}
-                      placeholder="Husband/Wife"
-                      onChange={(e) =>
-                        dispatch({
-                          type: "UPDATE_SPOUSE",
-                          id: node.id,
-                          idx: i,
-                          name: e.target.value,
-                        })
-                      }
-                    />
-                    <button
-                      className="ft-btn ft-btn-red"
-                      onClick={() =>
-                        dispatch({
-                          type: "DELETE_SPOUSE",
-                          id: node.id,
-                          idx: i,
-                        })
-                      }
-                    >
-                      🗑
-                    </button>
+              {(node.spouses || []).map((s, i) => {
+                const [spouseName, setSpouseName] = useState(s);
+                useEffect(() => setSpouseName(s), [s]);
+
+                return (
+                  <div key={i} className="ft-spouse">
+                    <div className="ft-row">
+                      <input
+                        className="ft-input small"
+                        value={spouseName}
+                        placeholder="Husband/Wife"
+                        onChange={(e) => setSpouseName(e.target.value)}
+                        onBlur={() =>
+                          dispatch({
+                            type: "UPDATE_SPOUSE",
+                            id: node.id,
+                            idx: i,
+                            name: spouseName,
+                          })
+                        }
+                      />
+                      <button
+                        className="ft-btn ft-btn-red"
+                        onClick={() =>
+                          dispatch({
+                            type: "DELETE_SPOUSE",
+                            id: node.id,
+                            idx: i,
+                          })
+                        }
+                      >
+                        🗑
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+
 
               <div className="ft-children">
                 {(node.children || []).map((c) => (
